@@ -4,12 +4,31 @@ use strict;
 use warnings;
 use utf8;
 
-for my $filename (@ARGV) {
-    process($filename);
+my $filename_pattern = $ARGV[0];
+my $output_dir = $ARGV[1];
+
+if (!defined $filename_pattern) {
+    print_usage();
+    die "Path with file mask not set";
 }
+
+if (!defined $output_dir) {
+    print_usage();
+    die "Outdir not set";
+}
+
+my @filenames = glob $filename_pattern;
+foreach my $filename (@filenames){
+    process($filename, $output_dir);
+}
+
 
 sub process {
     my $filename = shift;
+    my $output_dir = shift;
+    
+    my $base_filename = $filename;
+    $base_filename =~ s!.*[\\/]!!;
     
     open my $fh, "<:encoding(cp1251)", $filename or die;
     #Skip header
@@ -29,9 +48,14 @@ sub process {
     }
     close $fh;
 
-    open $fh, ">:encoding(UTF-8)", $filename or die;
+    open $fh, ">:encoding(UTF-8)", "$output_dir/$base_filename" or die;
     print $fh $accum_string;
     close $fh;
+}
+
+sub print_usage {
+    print "Usage: format.pl <path with file mask> <outdir>\n";
+    print "Example: format.pl  RawData/*.csv Processed\n";
 }
 
 sub ts {
